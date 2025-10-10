@@ -1,0 +1,29 @@
+{
+  "name": "projeto-integrador-2025-2",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "- Projeto do Guilherme semestre 2025.2",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon ./src/server.js",
+    "start": "node ./src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guilherme-da-silva-vieira/projeto-integrador-2025-2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/guilherme-da-silva-vieira/projeto-integrador-2025-2/issues"
+  },
+  "homepage": "https://github.com/guilherme-da-silva-vieira/projeto-integrador-2025-2#readme",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
