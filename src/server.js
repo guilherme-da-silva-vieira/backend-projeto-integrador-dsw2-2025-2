@@ -16,7 +16,7 @@
 // IMPORTAÇÕES E CONFIGURAÇÃO INICIAL
 // -----------------------------------------------------------------------------
 import express from "express";
-import { pool } from "./db.js"; // "pool" gere as conexões com o PostgreSQL
+import { pool } from "./bd/db.js"; // "pool" gere as conexões com o PostgreSQL
 const app = express();
 
 app.use(express.json());
