@@ -51,7 +51,7 @@ app.get("/", async (_req, res) => {
 // ordenados pelo `id` em ordem decrescente (as mais recentes primeiro).
 app.get("/api/mensagens", async (_req, res) => {
     try {
-        const { rows } = await pool.query("SELECT * FROM mensagens ORDER BY id DESC");
+        const { rows } = await pool.query(`SELECT * FROM "Mensagens" ORDER BY "id" DESC`);
         res.json(rows);
     } catch {
         res.status(500).json({ erro: "erro interno" });
@@ -71,7 +71,7 @@ app.get("/api/mensagens/:id", async (req, res) => {
     }
 
     try {
-        const result = await pool.query("SELECT * FROM mensagens WHERE id = $1", [id]);
+        const result = await pool.query(`SELECT * FROM "Mensagens" WHERE "id" = $1`, [id]);
         const { rows } = result;
         if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
 
@@ -100,7 +100,7 @@ app.post("/api/mensagens", async (req, res) => {
 
     try {
         const { rows } = await pool.query(
-            "INSERT INTO mensagens (usuarios_id, destinatario_id, mensagem) VALUES ($1, $2, $3) RETURNING *",
+            `INSERT INTO "Mensagens" ('usuarios_id', 'destinatario_id', 'mensagem') VALUES ($1, $2, $3) RETURNING *`,
             [uId, dId, mensagem]
         );
 
@@ -134,7 +134,7 @@ app.put("/api/mensagens/:id", async (req, res) => {
 
     try {
         const { rows } = await pool.query(
-            `UPDATE mensagens SET usuarios_id = $1, destinatario_id = $2, mensagem = $3 WHERE id = $4 RETURNING *`,
+            `UPDATE "Mensagens" SET 'usuarios_id' = $1, 'destinatario_id' = $2, 'mensagem' = $3 WHERE 'id' = $4 RETURNING *`,
             [usuarios_id, destinatario_id, mensagem, id]
         );
 
@@ -183,8 +183,8 @@ app.patch("/api/mensagens/:id", async (req, res) => {
 
     try {
         const { rows } = await pool.query(
-            `UPDATE mensagens SET mensagem = COALESCE($1, mensagem), usuarios_id = COALESCE($2, usuarios_id),
-            destinatario_id = COALESCE($3, destinatario_id) WHERE id = $4 RETURNING *`,
+            `UPDATE mensagens SET 'mensagem' = COALESCE($1, 'mensagem'), 'usuarios_id' = COALESCE($2, 'usuarios_id'),
+            'destinatario_id' = COALESCE($3, 'destinatario_id') WHERE 'id' = $4 RETURNING *`,
             [mensagem ?? null, usuarios_id ?? null, destinatario_id ?? null, id]
         );
 
@@ -207,7 +207,7 @@ app.delete("/api/mensagens/:id", async (req, res) => {
     }
 
     try {
-        const r = await pool.query("DELETE FROM mensagens WHERE id = $1 RETURNING id", [id]);
+        const r = await pool.query(`DELETE FROM "Mensagens" WHERE 'id' = $1 RETURNING "id"  `, [id]);
 
         if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
 
