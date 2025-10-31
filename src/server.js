@@ -53,7 +53,7 @@ app.get("/", async (_req, res) => {
 // ordenados pelo `id` em ordem decrescente (as mais recentes primeiro).
 app.get("/api/mensagens", async (_req, res) => {
     try {
-        const { rows } = await pool.query(`SELECT * FROM "Usuarios" ORDER BY "id" DESC`);
+        const { rows } = await pool.query(`SELECT * FROM "Mensagens" ORDER BY "id" DESC`);
         res.json(rows);
     } catch {
         res.status(500).json({ erro: "erro interno" });
