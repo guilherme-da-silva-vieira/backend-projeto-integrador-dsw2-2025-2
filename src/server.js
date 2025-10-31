@@ -17,8 +17,10 @@
 // -----------------------------------------------------------------------------
 import express from "express";
 import { pool } from "./bd/db.js"; // "pool" gere as conexões com o PostgreSQL
+import cors from "cors";
 const app = express();
-
+//configura em modo permissivo
+app.use(cors());
 app.use(express.json());
 // Middleware que interpreta o corpo (body) de requisições com `Content-Type: application/json`.
 // Converte a string JSON recebida num objeto JavaScript acessível via `req.body`.
@@ -51,7 +53,7 @@ app.get("/", async (_req, res) => {
 // ordenados pelo `id` em ordem decrescente (as mais recentes primeiro).
 app.get("/api/mensagens", async (_req, res) => {
     try {
-        const { rows } = await pool.query(`SELECT * FROM "Mensagens" ORDER BY "id" DESC`);
+        const { rows } = await pool.query(`SELECT * FROM "Usuarios" ORDER BY "id" DESC`);
         res.json(rows);
     } catch {
         res.status(500).json({ erro: "erro interno" });
