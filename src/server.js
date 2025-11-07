@@ -90,24 +90,25 @@ app.get("/api/mensagens/:id", async (req, res) => {
 // (`usuarios_id`, `destinatario_id`, `mensagem`) devem ser enviados no corpo
 // da requisição em formato JSON.
 app.post("/api/mensagens", async (req, res) => {
-    const { usuarios_id, destinatario_id,  mensagem} = req.body ?? {};
+    const { Usuarios_id, Usuarios_id_destinatario,  mensagem} = req.body ?? {};
 
-    const uId = Number(usuarios_id);
-    const dId = Number(destinatario_id);
+    const uId = Number(Usuarios_id);
+    const dId = Number(Usuarios_id_destinatario);
     if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1
     || uId == dId) {
-        return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e
+        return res.status(400).json({ erro: `Usuarios_id, Usuarios_id_destinatario(Number >= 0 && uId != dId) e
                 mensagem(tipo string e não vazio) são obrigatórios` });
     }
 
     try {
         const { rows } = await pool.query(
-            `INSERT INTO "Mensagens" ('usuarios_id', 'destinatario_id', 'mensagem') VALUES ($1, $2, $3) RETURNING *`,
+            `INSERT INTO "Mensagens" ("Usuarios_id", "Usuarios_id_destinatario", "mensagem") VALUES ($1, $2, $3) RETURNING *`,
             [uId, dId, mensagem]
         );
 
         res.status(201).json(rows[0]);
-    } catch {
+    } catch(erro) {
+        console.log(erro);
         res.status(500).json({ erro: "erro interno" });
     }
 });
