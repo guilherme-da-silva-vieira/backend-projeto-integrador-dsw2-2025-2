@@ -152,7 +152,7 @@ usurariosRoutes.post("/register", async (req, res) => {
 
     try {
         const senha_hash = await bcrypt.hash(senha, 12); // custo 12: equilibrado entre segurança e performance
-        const papel = 0;
+        const papel = 1;
 
         const r = await pool.query(
             `INSERT INTO "Usuarios" ("nome","email","senha_hash","papel")

@@ -19,13 +19,17 @@ import express from "express";
 import cors from "cors";
 import usuariosRoutes from "./routes/usuarios.routes.js";
 import router from "./routes/mensagens.routes.js";
+// import { authMiddleware } from "./middlewares/auth.js";
 const app = express();
 //configura em modo permissivo
 app.use(cors());
+
+// converte em dados json  e coloca em req.body
 app.use(express.json());
 
 app.use("/api/usuarios", usuariosRoutes); // configurando as rotas de usuário
-app.use("/api/mensagens", router);
+// app.use("/api/mensagens", authMiddleware, router);
+app.use("/api/mensagens", router)
 // Middleware que interpreta o corpo (body) de requisições com `Content-Type: application/json`.
 // Converte a string JSON recebida num objeto JavaScript acessível via `req.body`.
 
