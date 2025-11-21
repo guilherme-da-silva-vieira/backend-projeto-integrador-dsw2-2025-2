@@ -199,7 +199,7 @@ usuariosRoutes.get("/:id", async (_req, res) => {
     if(!Number.isInteger(id) || id <= 0)
         return res.status(400).json({erro:"id inválido!"});
     try {
-        const result = await pool.query(`SELECT * FROM "Usuarios" WHERE "id" = $1`,[id]);
+        const result = await pool.query(`SELECT "id","nome" FROM "Usuarios" WHERE "id" = $1`,[id]);
         const {rows} = result;
         if(!rows[0]) return res.status(404).json({erro:"Não Encontrado"});
         res.json(rows[0]);
