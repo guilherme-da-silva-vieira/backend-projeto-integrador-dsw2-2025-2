@@ -187,7 +187,7 @@ usuariosRoutes.post("/logout", async (req, res) => {
 
 usuariosRoutes.get("/", async (req, res) => {
     try {
-        const {rows} = await pool.query(`SELECT * FROM "Usuarios" ORDER BY "id" DESC`);
+        const {rows} = await pool.query(`SELECT "id","nome" FROM "Usuarios" ORDER BY "id" DESC`);
         res.json(rows);
     } catch (error) {
         res.status(500).json({erro:"erro interno"});
