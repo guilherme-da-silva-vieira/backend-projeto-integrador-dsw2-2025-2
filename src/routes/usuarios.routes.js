@@ -14,7 +14,7 @@ import dotenv from "dotenv";              // Carrega variáveis do .env em proce
 import { pool } from "../bd/db.js"; // Pool do Postgres para consultas ao banco
 
 dotenv.config();                          // Inicializa dotenv (deixa segredos acessíveis via process.env)
-const usurariosRoutes = Router();                  // Cria um roteador isolado para montar em /api/usuarios (por exemplo)
+const usuariosRoutes = Router();                  // Cria um roteador isolado para montar em /api/usuarios (por exemplo)
 
 const {
     JWT_ACCESS_SECRET,                      // Segredo para verificar/assinar o access token
@@ -43,16 +43,16 @@ function signRefreshToken(u) {
 function cookieOpts(req) {
     // Opções do cookie do refresh: HttpOnly (não acessível via JS do navegador),
     // SameSite=Lax (mitiga CSRF na maioria dos fluxos same-site), secure=false para desenvolvimento,
-    // path limitado ao prefixo onde o usurariosRoutes for montado (ex.: "/api/usuarios"),
+    // path limitado ao prefixo onde o usuariosRoutes for montado (ex.: "/api/usuarios"),
     // e Max-Age para expiração no cliente.
     return {
         httpOnly: true,
         sameSite: "Lax",
         secure: false,            // simples: HTTP em dev; quando for subir HTTPS, troque para true
         // Path define o prefixo de URL no qual o navegador anexa o cookie. 
-        // Em Express, req.baseUrl é o caminho onde esse usurariosRoutes foi montado; 
+        // Em Express, req.baseUrl é o caminho onde esse usuariosRoutes foi montado; 
         // usar path: req.baseUrl faz o cookie só ir para as rotas desse módulo. 
-        // Exemplo: se o usurariosRoutes está em /api/usuarios, o cookie é enviado para 
+        // Exemplo: se o usuariosRoutes está em /api/usuarios, o cookie é enviado para 
         // /api/usuarios/login e /api/usuarios/refresh, mas não para /api/chamados/.... 
         // O || "/" é um fallback (caso não haja prefixo), tornando o cookie válido no site todo.
         path: req.baseUrl || "/",
@@ -68,7 +68,7 @@ function clearRefreshCookie(res, req) {
     res.clearCookie(REFRESH_COOKIE, cookieOpts(req));
 }
 
-usurariosRoutes.post("/login", async (req, res) => {
+usuariosRoutes.post("/login", async (req, res) => {
     // Autentica por email/senha:
     // 1) busca usuário pelo email;
     // 2) compara senha com hash;
@@ -102,7 +102,7 @@ usurariosRoutes.post("/login", async (req, res) => {
     }
 });
 
-usurariosRoutes.post("/refresh", async (req, res) => {
+usuariosRoutes.post("/refresh", async (req, res) => {
     // Emite novo par de tokens usando o refresh do cookie:
     // 1) lê cookie HttpOnly;
     // 2) verifica assinatura/tipo;
@@ -136,7 +136,7 @@ usurariosRoutes.post("/refresh", async (req, res) => {
     }
 });
 
-usurariosRoutes.post("/register", async (req, res) => {
+usuariosRoutes.post("/register", async (req, res) => {
     // Cadastro simples:
     // 1) valida campos mínimos;
     // 2) gera hash da senha;
@@ -179,10 +179,35 @@ usurariosRoutes.post("/register", async (req, res) => {
     }
 });
 
-usurariosRoutes.post("/logout", async (req, res) => {
+usuariosRoutes.post("/logout", async (req, res) => {
     // “Logout” stateless: apenas remove o cookie de refresh no cliente
     clearRefreshCookie(res, req);
     return res.status(204).end();
 });
 
-export default usurariosRoutes;              // Exporta o roteador para ser montado no servidor principal
+usuariosRoutes.get("/", async (req, res) => {
+    try {
+        const {rows} = await pool.query(`SELECT * FROM "Usuarios" ORDER BY "id" DESC`);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({erro:"erro interno"});
+    }
+});
+
+usuariosRoutes.get("/:id", async (_req, res) => {
+    const id = Number(_req.params.id);
+    if(!Number.isInteger(id) || id <= 0)
+        return res.status(400).json({erro:"id inválido!"});
+    try {
+        const result = await pool.query(`SELECT * FROM "Usuarios" WHERE "id" = $1`,[id]);
+        const {rows} = result;
+        if(!rows[0]) return res.status(404).json({erro:"Não Encontrado"});
+        res.json(rows[0]);
+
+        
+    } catch (error) {
+        res.status(500).json({erro:"erro interno"});
+    }
+});
+
+export default usuariosRoutes;              // Exporta o roteador para ser montado no servidor principal
