@@ -29,7 +29,6 @@ app.use(express.json());
 
 app.use("/api/usuarios", usuariosRoutes); // configurando as rotas de usuário
 app.use("/api/mensagens", authMiddleware, router);
-app.use("/api/mensagens", router);
 // Middleware que interpreta o corpo (body) de requisições com `Content-Type: application/json`.
 // Converte a string JSON recebida num objeto JavaScript acessível via `req.body`.
 

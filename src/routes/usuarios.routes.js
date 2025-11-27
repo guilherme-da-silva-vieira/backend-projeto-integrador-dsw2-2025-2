@@ -142,23 +142,28 @@ usuariosRoutes.post("/register", async (req, res) => {
     // 2) gera hash da senha;
     // 3) insere usuário como papel padrão (0);
     // 4) emite access + refresh e grava o refresh em cookie HttpOnly.
-    const { nome, email, senha } = req.body ?? {};
-    if (!nome || !email || !senha) {
-        return res.status(400).json({ erro: "nome, email e senha são obrigatórios" });
+
+    const { nome, email, senha, papel } = req.body ?? {};
+
+    const papelNumber = Number(papel);
+    if (!nome || !email || !senha || !papel) {
+        return res.status(400).json({ erro: "nome, email, senha e papel são obrigatórios" });
     }
     if (String(senha).length < 6) {
         return res.status(400).json({ erro: "senha deve ter pelo menos 6 caracteres" });
     }
+    if(Number.isNaN(papelNumber) || papelNumber < 0 || papelNumber > 1){
+        return res.status(400).json({erro: "papel inválido!"});
+    }
 
     try {
         const senha_hash = await bcrypt.hash(senha, 12); // custo 12: equilibrado entre segurança e performance
-        const papel = 1;
 
         const r = await pool.query(
             `INSERT INTO "Usuarios" ("nome","email","senha_hash","papel")
              VALUES ($1,$2,$3,$4)
              RETURNING "id","nome","email","papel"`,
-            [String(nome).trim(), String(email).trim().toLowerCase(), senha_hash, papel]
+            [String(nome).trim(), String(email).trim().toLowerCase(), senha_hash, String(papelNumber)]
         );
         const user = r.rows[0];
 

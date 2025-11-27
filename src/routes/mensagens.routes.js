@@ -172,8 +172,8 @@ router.patch("/:id", async (req, res) => {
 
     try {
         const { rows } = await pool.query(
-            `UPDATE Mnsagens SET "mensagem" = COALESCE($1, "mensagem"), "Usuarios_id" = COALESCE($2, "Usuarios_id"),
-            "Usuarios_id_destinatario" = COALESCE($3, "Usuarios_id_destinatario") WHERE 'id' = $4 RETURNING *`,
+            `UPDATE "Mensagens" SET "mensagem" = COALESCE($1, "mensagem"), "Usuarios_id" = COALESCE($2, "Usuarios_id"),
+            "Usuarios_id_destinatario" = COALESCE($3, "Usuarios_id_destinatario") WHERE "id" = $4 RETURNING *`,
             [mensagem ?? null, Usuarios_id ?? null, Usuarios_id_destinatario ?? null, id]
         );
 
