@@ -20,10 +20,11 @@ import cors from "cors";
 import usuariosRoutes from "./routes/usuarios.routes.js";
 import router from "./routes/mensagens.routes.js";
 import { authMiddleware } from "./middlewares/auth.js";
+import cookieParser from "cookie-parser";
 const app = express();
 //configura em modo permissivo
 app.use(cors());
-
+app.use(cookieParser());
 // converte em dados json  e coloca em req.body
 app.use(express.json());
 

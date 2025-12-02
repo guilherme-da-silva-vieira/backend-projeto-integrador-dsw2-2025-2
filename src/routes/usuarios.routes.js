@@ -14,6 +14,7 @@ import dotenv from "dotenv";              // Carrega variáveis do .env em proce
 import { pool } from "../bd/db.js"; // Pool do Postgres para consultas ao banco
 import { authMiddleware } from "../middlewares/auth.js"
 
+
 dotenv.config();                          // Inicializa dotenv (deixa segredos acessíveis via process.env)
 const usuariosRoutes = Router();                  // Cria um roteador isolado para montar em /api/usuarios (por exemplo)
 
@@ -109,11 +110,11 @@ usuariosRoutes.post("/refresh", async (req, res) => {
     // 2) verifica assinatura/tipo;
     // 3) checa se o usuário ainda existe;
     // 4) devolve novo access e rotaciona o refresh no cookie.
-    const refresh = req.cookies?.[REFRESH_COOKIE];
-    if (!refresh) return res.status(401).json({ erro: "refresh ausente" });
+    const {refresh_token} = req.cookies;
+    if (!refresh_token) return res.status(401).json({ erro: "refresh ausente" });
 
     try {
-        const payload = jwt.verify(refresh, JWT_REFRESH_SECRET);
+        const payload = jwt.verify(refresh_token, JWT_REFRESH_SECRET);
         if (payload.tipo !== "refresh") return res.status(400).json({ erro: "refresh inválido" });
 
         const r = await pool.query(
