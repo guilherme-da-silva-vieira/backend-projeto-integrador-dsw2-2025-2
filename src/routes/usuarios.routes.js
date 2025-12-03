@@ -13,6 +13,7 @@ import bcrypt from "bcryptjs";            // Biblioteca para hashing e verifica�
 import dotenv from "dotenv";              // Carrega variáveis do .env em process.env
 import { pool } from "../bd/db.js"; // Pool do Postgres para consultas ao banco
 import { authMiddleware } from "../middlewares/auth.js"
+import cookieParser from "cookie-parser";// trabalhando com cookies na requisição(29/11/2025)
 
 dotenv.config();                          // Inicializa dotenv (deixa segredos acessíveis via process.env)
 const usuariosRoutes = Router();                  // Cria um roteador isolado para montar em /api/usuarios (por exemplo)
@@ -27,7 +28,7 @@ const {
 const REFRESH_COOKIE = "refresh_token";           // Nome fixo do cookie HttpOnly que guarda o refresh
 // 7 dias em ms (simples e suficiente; não depende de novas envs)
 const REFRESH_MAX_AGE = 7 * 24 * 60 * 60 * 1000;  // Max-Age do cookie para alinhamento aproximado
-
+// 7 dias * 24 horas * 60 minutos * 60 segundos * 1000 milésimos
 function signAccessToken(u) {
     // Assina um access token com dados mínimos para autorização no back (id/papel/nome)
     return jwt.sign({ sub: u.id, papel: u.papel, nome: u.nome }, JWT_ACCESS_SECRET, {
@@ -102,18 +103,17 @@ usuariosRoutes.post("/login", async (req, res) => {
         return res.status(500).json({ erro: "erro interno" });
     }
 });
-
 usuariosRoutes.post("/refresh", async (req, res) => {
     // Emite novo par de tokens usando o refresh do cookie:
     // 1) lê cookie HttpOnly;
     // 2) verifica assinatura/tipo;
     // 3) checa se o usuário ainda existe;
     // 4) devolve novo access e rotaciona o refresh no cookie.
-    const refresh = req.cookies?.[REFRESH_COOKIE];
-    if (!refresh) return res.status(401).json({ erro: "refresh ausente" });
-
+    const {refresh_token} = req.cookies; //cookie refresh_token na requisição(29/11/2025)
+    if (!refresh_token) return res.status(401).json({ erro: "refresh ausente" });
+    
     try {
-        const payload = jwt.verify(refresh, JWT_REFRESH_SECRET);
+        const payload = jwt.verify(refresh_token, JWT_REFRESH_SECRET);
         if (payload.tipo !== "refresh") return res.status(400).json({ erro: "refresh inválido" });
 
         const r = await pool.query(
@@ -178,12 +178,13 @@ usuariosRoutes.post("/register", async (req, res) => {
         });
     } catch (err) {
         // Código 23505 (Postgres) indica violação de UNIQUE (e.g. email já cadastrado)
-        console.log(err);
+
         if (err?.code === "23505") return res.status(409).json({ erro: "email já cadastrado" });
         return res.status(500).json({ erro: "erro interno" });
     }
 });
 
+//no POSTMAN(por exemplo) o cookie é armazenado enquanto no CURL não(29/11/2025) por isso que devemos deixar o valor vazio
 usuariosRoutes.post("/logout", async (req, res) => {
     // “Logout” stateless: apenas remove o cookie de refresh no cliente
     clearRefreshCookie(res, req);
