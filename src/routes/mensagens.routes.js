@@ -198,7 +198,7 @@ router.delete("/:id", async (req, res) => {
     }
 
     try {
-        const r = await pool.query(`DELETE FROM "Mensagens" WHERE 'id' = $1 RETURNING "id"  `, [id]);
+        const r = await pool.query(`DELETE FROM "Mensagens" WHERE "id" = $1 RETURNING "id"  `, [id]);
 
         if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
 
