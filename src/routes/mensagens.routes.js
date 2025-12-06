@@ -149,7 +149,7 @@ router.post("/admin", async (req, res) => {
     const header = req.headers["authorization"];
     const token = header.slice(7);
     const decode = jwt.decode(token);
-    if(decode.papel != 0) return res.status(401).json({erro: "Sem permissão!"});
+    if (decode.papel != 0) return res.status(401).json({ erro: "Sem permissão!" });
     const uId = Number(Usuarios_id);
     const dId = Number(Usuarios_id_destinatario);
     if (!mensagem || typeof (mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1
@@ -179,12 +179,16 @@ router.post("/admin", async (req, res) => {
 // campos. Exige que o corpo da requisição contenha a representação completa
 // e válida do recurso.
 
-// PUT /api/mensagens/:id
+// PUT /api/mensagens/:id a sobrescrição é somente para administradores
 router.put("/:id", async (req, res) => {
     const id = Number(req.params.id);
     const { Usuarios_id, Usuarios_id_destinatario, mensagem } = req.body ?? {};
     const uId = Number(Usuarios_id);
     const dId = Number(Usuarios_id_destinatario);
+    const header = req.headers["authorization"];
+    const token = header.slice(7);
+    const decode = jwt.decode(token);
+    if (decode.papel != 0) return res.status(401).json({ erro: "Sem permissão!" });
 
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ erro: "id inválido" });
@@ -219,11 +223,15 @@ router.put("/:id", async (req, res) => {
 // permanecerão com os seus valores atuais na base de dados, graças ao uso
 // da função COALESCE do SQL.
 
+// patch(atualização parcial) pode ser Utilizado pelo usuário que enviou
 // /api/mensagens/:id
 router.patch("/:id", async (req, res) => {
     const id = Number(req.params.id);
-    const { Usuarios_id, Usuarios_id_destinatario, mensagem } = req.body ?? {};
-
+    const { Usuarios_id_destinatario, mensagem } = req.body ?? {};
+    const header = req.headers["authorization"];
+    const token = header.slice(7);
+    const decode = jwt.decode(token);
+    const Usuarios_id = decode.sub;
     const uId = Number(Usuarios_id);
     const dId = Number(Usuarios_id_destinatario);
 
@@ -232,8 +240,8 @@ router.patch("/:id", async (req, res) => {
         return res.status(400).json({ erro: "id inválido" });
     }
 
-    if (mensagem === undefined && Usuarios_id_destinatario === undefined && usuarios_id === undefined) {
-        return res.status(400).json({ erro: "envie usuarios_id, destinatarios_id e/ou mensagem" });
+    if (mensagem === undefined && Usuarios_id_destinatario === undefined) {
+        return res.status(400).json({ erro: "envie destinatarios_id e/ou mensagem" });
     }
 
     if (Usuarios_id !== undefined) {
@@ -247,20 +255,33 @@ router.patch("/:id", async (req, res) => {
             return res.status(400).json({ erro: "ids de destinatario devem ser número >= 0" })
         }
     }
-
     try {
-        const { rows } = await pool.query(
-            `UPDATE "Mensagens" SET "mensagem" = COALESCE($1, "mensagem"), "Usuarios_id" = COALESCE($2, "Usuarios_id"),
+        const consulta = await pool.query(`SELECT "Usuarios_id" FROM "Mensagens" WHERE "id"=$1`, [id]);
+        const linha = consulta.rows[0];
+        const usrId = linha.Usuarios_id;
+        //analisando se é o usuário que enviou ou é administrador
+        if (usrId == Usuarios_id) {
+            try {
+                const { rows } = await pool.query(
+                    `UPDATE "Mensagens" SET "mensagem" = COALESCE($1, "mensagem"), "Usuarios_id" = COALESCE($2, "Usuarios_id"),
             "Usuarios_id_destinatario" = COALESCE($3, "Usuarios_id_destinatario") WHERE "id" = $4 RETURNING *`,
-            [mensagem ?? null, Usuarios_id ?? null, Usuarios_id_destinatario ?? null, id]
-        );
+                    [mensagem ?? null, Usuarios_id ?? null, Usuarios_id_destinatario ?? null, id]
+                );
 
-        if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
-        res.json(rows[0]);
-    } catch {
-        res.status(500).json({ erro: "erro interno" });
+                if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
+                return res.json(rows[0]);
+            } catch {
+                return res.status(500).json({ erro: "erro interno" });
+            }
+        }
+        else return res.status(401).json({ erro: "Sem permissão!" });
     }
-});
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ erro: "Erro interno no serivdor" })
+    }
+}
+);
 
 // -----------------------------------------------------------------------------
 // ENDPOINT: DELETE /api/mensagens/:id - Apagar uma mensagem
