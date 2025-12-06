@@ -302,7 +302,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const consulta = await pool.query(`SELECT "Usuarios_id" FROM "Mensagens" WHERE "id"=$1`,[id]);
         const linha = consulta.rows[0];
-        if(decode.papel == 0 || linha.Usuarios_id == Usuarios_id_destinatario){
+        if(decode.papel == 0 || linha.Usuarios_id == decode.sub){
             const r = await pool.query(`DELETE FROM "Mensagens" WHERE "id" = $1 RETURNING "id"  `, [id]);
             if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
             return res.status(204).end();
