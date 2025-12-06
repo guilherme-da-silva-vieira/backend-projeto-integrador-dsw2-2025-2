@@ -6,6 +6,7 @@ import multer from "multer"; // import do multer
 import path from "path";     // import do path
 import fs from "fs";         // import do fs
 import jwt from "jsonwebtoken";
+import { error } from "node:console";
 
 const router = Router();
 
@@ -32,13 +33,13 @@ const upload = multer({ storage });
 //GET /api/mensagens
 router.get("/", async (_req, res) => {
     const header = _req.headers["authorization"];
-    if(!header || !header.startsWith("Bearer ")) return res.status(401).json({erro: "token ausente"})
+    if (!header || !header.startsWith("Bearer ")) return res.status(401).json({ erro: "token ausente" })
     const token = header.slice(7);
     const decode = jwt.decode(token);
     try {
-        const { rows} = await pool.query(`SELECT * FROM "Mensagens" WHERE "Usuarios_id" = $1 OR "Usuarios_id_destinatario"= $1 ORDER BY "id" DESC;`, [decode.sub]);
+        const { rows } = await pool.query(`SELECT * FROM "Mensagens" WHERE "Usuarios_id" = $1 OR "Usuarios_id_destinatario"= $1 ORDER BY "id" DESC;`, [decode.sub]);
         return res.json(rows);
-    } catch (erro){
+    } catch (erro) {
         console.log(erro);
         res.status(500).json({ erro: "erro interno" });
     }
@@ -47,7 +48,7 @@ router.get("/", async (_req, res) => {
 router.get("/admin", async (_req, res) => {
     const header = _req.headers["authorization"];
     if (!header || !header.startsWith("Bearer ")) {
-      return res.status(401).json({ erro: "token ausente" });
+        return res.status(401).json({ erro: "token ausente" });
     }
     const token = header.slice(7);
 
@@ -66,8 +67,8 @@ router.get("/admin", async (_req, res) => {
             }
         }
     }
-    catch (erro){
-        return res.status(500).json({erro: "erro interno"});
+    catch (erro) {
+        return res.status(500).json({ erro: "erro interno" });
     }
 });
 
@@ -94,13 +95,14 @@ router.get("/:id", async (req, res) => {
         if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
 
         //autentição(analisando se é o usuário que enviou, o destinatário ou administrador)
-        const {Usuarios_id, Usuarios_id_destinatario} = rows[0];
-        if(Usuarios_id == decode.sub || Usuarios_id_destinatario == decode.sub || decode.papel == 0) 
+        const { Usuarios_id, Usuarios_id_destinatario } = rows[0];
+        if (Usuarios_id == decode.sub || Usuarios_id_destinatario == decode.sub || decode.papel == 0)
             return res.json(rows[0]);
         else
             return res.status(404).json({ erro: "não encontrado!" });
-    } catch {
-        res.status(500).json({ erro: "erro interno" });
+    }
+    catch {
+        return res.status(500).json({ erro: "erro interno" });
     }
 });
 
@@ -113,8 +115,41 @@ router.get("/:id", async (req, res) => {
 
 //POST /api/mensagens
 router.post("/", async (req, res) => {
-    const { Usuarios_id, Usuarios_id_destinatario, mensagem } = req.body ?? {};
+    const { Usuarios_id_destinatario, mensagem } = req.body ?? {};
 
+    const header = req.headers["authorization"];
+    const token = header.slice(7);
+    const decode = jwt.decode(token);
+    const Usuarios_id = decode.sub;
+    const uId = Number(Usuarios_id);
+    const dId = Number(Usuarios_id_destinatario);
+    if (!mensagem || typeof (mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1
+        || uId == dId) {
+        return res.status(400).json({
+            erro: `Usuarios_id, Usuarios_id_destinatario(Number >= 0 && uId != dId) e
+                mensagem(tipo string e não vazio) são obrigatórios` });
+    }
+
+    try {
+        const { rows } = await pool.query(
+            `INSERT INTO "Mensagens" ("Usuarios_id", "Usuarios_id_destinatario", "mensagem") VALUES ($1, $2, $3) RETURNING *`,
+            [uId, dId, mensagem]
+        );
+
+        res.status(201).json(rows[0]);
+    } catch (erro) {
+        console.log(erro);
+        res.status(500).json({ erro: "erro interno" });
+    }
+});
+
+//POST /api/mensagens/admin
+router.post("/admin", async (req, res) => {
+    const { Usuarios_id, Usuarios_id_destinatario, mensagem } = req.body ?? {};
+    const header = req.headers["authorization"];
+    const token = header.slice(7);
+    const decode = jwt.decode(token);
+    if(decode.papel != 0) return res.status(401).json({erro: "Sem permissão!"});
     const uId = Number(Usuarios_id);
     const dId = Number(Usuarios_id_destinatario);
     if (!mensagem || typeof (mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1
