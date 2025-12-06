@@ -223,7 +223,7 @@ router.put("/:id", async (req, res) => {
 // permanecerão com os seus valores atuais na base de dados, graças ao uso
 // da função COALESCE do SQL.
 
-// patch(atualização parcial) pode ser Utilizado pelo usuário que enviou
+// patch(atualização parcial) pode ser utilizado somente pelo usuário que enviou
 // /api/mensagens/:id
 router.patch("/:id", async (req, res) => {
     const id = Number(req.params.id);
@@ -288,20 +288,26 @@ router.patch("/:id", async (req, res) => {
 // -----------------------------------------------------------------------------
 // Remove permanentemente uma mensagem da base de dados, identificada pelo seu `id`.
 
-// DELETE /api/mensagens/:id
+// DELETE /api/mensagens/:id podendo ser utilizado pelo usuário que enviou ou administrador(es)
 router.delete("/:id", async (req, res) => {
     const id = Number(req.params.id);
+    const header = req.headers["authorization"];
+    const token = header.slice(7);
+    const decode = jwt.decode(token);
 
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ erro: "id inválido" });
     }
 
     try {
-        const r = await pool.query(`DELETE FROM "Mensagens" WHERE "id" = $1 RETURNING "id"  `, [id]);
-
-        if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
-
-        res.status(204).end();
+        const consulta = await pool.query(`SELECT "Usuarios_id" FROM "Mensagens" WHERE "id"=$1`,[id]);
+        const linha = consulta.rows[0];
+        if(decode.papel == 0 || linha.Usuarios_id == Usuarios_id_destinatario){
+            const r = await pool.query(`DELETE FROM "Mensagens" WHERE "id" = $1 RETURNING "id"  `, [id]);
+            if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
+            return res.status(204).end();
+        }
+        else return res.status(401).json({erro: "Sem permissão"});
     } catch {
         res.status(500).json({ erro: "erro interno" });
     }
