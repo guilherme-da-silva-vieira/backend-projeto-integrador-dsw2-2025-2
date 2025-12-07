@@ -55,7 +55,7 @@ router.get("/admin", async (_req, res) => {
     const decode = jwt.decode(token);
     try {
         if (decode.papel != 0) {
-            return res.status(401).json({ erro: "você não tem permissão" })
+            return res.status(403).json({ erro: "você não tem permissão" })
         }
         else {
             try {
@@ -149,7 +149,7 @@ router.post("/admin", async (req, res) => {
     const header = req.headers["authorization"];
     const token = header.slice(7);
     const decode = jwt.decode(token);
-    if (decode.papel != 0) return res.status(401).json({ erro: "Sem permissão!" });
+    if (decode.papel != 0) return res.status(403).json({ erro: "Sem permissão!" });
     const uId = Number(Usuarios_id);
     const dId = Number(Usuarios_id_destinatario);
     if (!mensagem || typeof (mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1
@@ -188,7 +188,7 @@ router.put("/:id", async (req, res) => {
     const header = req.headers["authorization"];
     const token = header.slice(7);
     const decode = jwt.decode(token);
-    if (decode.papel != 0) return res.status(401).json({ erro: "Sem permissão!" });
+    if (decode.papel != 0) return res.status(403).json({ erro: "Sem permissão!" });
 
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ erro: "id inválido" });
@@ -307,7 +307,7 @@ router.delete("/:id", async (req, res) => {
             if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
             return res.status(204).end();
         }
-        else return res.status(401).json({erro: "Sem permissão"});
+        else return res.status(403).json({erro: "Sem permissão"});
     } catch {
         res.status(500).json({ erro: "erro interno" });
     }

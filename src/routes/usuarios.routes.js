@@ -110,7 +110,7 @@ usuariosRoutes.post("/refresh", async (req, res) => {
     // 2) verifica assinatura/tipo;
     // 3) checa se o usuário ainda existe;
     // 4) devolve novo access e rotaciona o refresh no cookie.
-    const {refresh_token} = req.cookies;
+    const { refresh_token } = req.cookies;
     if (!refresh_token) return res.status(401).json({ erro: "refresh ausente" });
 
     try {
@@ -152,8 +152,8 @@ usuariosRoutes.post("/register", async (req, res) => {
     if (String(senha).length < 6) {
         return res.status(400).json({ erro: "senha deve ter pelo menos 6 caracteres" });
     }
-    if(Number.isNaN(papelNumber) || papelNumber < 0 || papelNumber > 1){
-        return res.status(400).json({erro: "papel inválido!"});
+    if (Number.isNaN(papelNumber) || papelNumber < 0 || papelNumber > 1) {
+        return res.status(400).json({ erro: "papel inválido!" });
     }
 
     try {
@@ -193,26 +193,26 @@ usuariosRoutes.post("/logout", async (req, res) => {
 
 usuariosRoutes.get("/", async (req, res) => {
     try {
-        const {rows} = await pool.query(`SELECT "id","nome" FROM "Usuarios" ORDER BY "id" DESC`);
+        const { rows } = await pool.query(`SELECT "id","nome","papel" FROM "Usuarios" ORDER BY "id" DESC`);
         res.json(rows);
     } catch (error) {
-        res.status(500).json({erro:"erro interno"});
+        res.status(500).json({ erro: "erro interno" });
     }
 });
 
 usuariosRoutes.get("/:id", async (_req, res) => {
     const id = Number(_req.params.id);
-    if(!Number.isInteger(id) || id <= 0)
-        return res.status(400).json({erro:"id inválido!"});
+    if (!Number.isInteger(id) || id <= 0)
+        return res.status(400).json({ erro: "id inválido!" });
     try {
-        const result = await pool.query(`SELECT "id","nome" FROM "Usuarios" WHERE "id" = $1`,[id]);
-        const {rows} = result;
-        if(!rows[0]) return res.status(404).json({erro:"Não Encontrado"});
+        const result = await pool.query(`SELECT "id","nome","papel" FROM "Usuarios" WHERE "id" = $1`, [id]);
+        const { rows } = result;
+        if (!rows[0]) return res.status(404).json({ erro: "Não Encontrado" });
         res.json(rows[0]);
 
-        
+
     } catch (error) {
-        res.status(500).json({erro:"erro interno"});
+        res.status(500).json({ erro: "erro interno" });
     }
 });
 
@@ -253,10 +253,38 @@ usuariosRoutes.put("/:id", authMiddleware, async (req, res) => {
         const { rows } = await pool.query(query, params);
 
         if (!rows[0]) return res.status(404).json({ erro: "usuário não encontrado" });
-        res.json(rows[0]);
+            return res.json(rows[0]);
     } catch (err) {
         if (err?.code === "23505") return res.status(409).json({ erro: "email já em uso" });
-        res.status(500).json({ erro: "erro interno" });
+        return res.status(500).json({ erro: "erro interno" });
+    }
+});
+
+//atualização parcial de papel do usuário(apenas administradores)
+usuariosRoutes.patch("/:id", authMiddleware, async (req, res) => {
+    const id = req.params.id;
+    const uid = Number(id);
+    if (!Number.isInteger(uid) || id <= 0) return res.status(400).json({ erro: "id inválido!" });
+    else if (req.user.papel != 0) return res.status(403).json({ erro: "não tem permissão" });
+    else {
+        try {
+            const consulta = await pool.query(`SELECT "papel" FROM "Usuarios" WHERE "id"=$1`, [uid]);
+            const linha = consulta.rows[0];
+            if (linha) {
+                const query = await pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id","nome","papel"`, [String(0),uid]);
+                const row = query.rows[0];
+                return res.json(row);
+            }
+            else{
+                const query = pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id",nome,"papel"`,[1,uid]);
+                const row = query.rows[0];
+                return res.json(row);
+            }
+        }
+        catch (erro) {
+            console.log(erro);
+            return res.status(500).json({erro:"erro interno"});
+        }
     }
 });
 
@@ -265,7 +293,7 @@ usuariosRoutes.put("/:id", authMiddleware, async (req, res) => {
 usuariosRoutes.delete("/:id", authMiddleware, async (req, res) => {
     const id = Number(req.params.id);
     const uid = req.user.id;
-    const isAdmin = req.user.papel === 1;
+    const isAdmin = req.user.papel === 0;
 
     if (uid !== id && !isAdmin) {
         return res.status(403).json({ erro: "sem permissão" });
