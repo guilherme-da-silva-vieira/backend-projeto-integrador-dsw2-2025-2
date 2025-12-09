@@ -144,16 +144,13 @@ usuariosRoutes.post("/register", async (req, res) => {
     // 2) gera hash da senha;
     // 3) insere usuário como papel padrão (0);
     // 4) emite access + refresh e grava o refresh em cookie HttpOnly.
-    const { nome, email, senha, papel } = req.body ?? {};
-    const papelNumber = Number.parseInt(papel);
+    const { nome, email, senha } = req.body ?? {};
+    const papel = 1;
     if (!nome || !email || !senha) {
         return res.status(400).json({ erro: "nome, email e senha são obrigatórios" });
     }
     if (String(senha).length < 6) {
         return res.status(400).json({ erro: "senha deve ter pelo menos 6 caracteres" });
-    }
-    if (Number.isNaN(papelNumber) || papelNumber < 0 || papelNumber > 1) {
-        return res.status(400).json({ erro: "papel inválido!" });
     }
 
     try {
@@ -191,7 +188,7 @@ usuariosRoutes.post("/logout", async (req, res) => {
     return res.status(204).end();
 });
 
-usuariosRoutes.get("/", async (req, res) => {
+usuariosRoutes.get("/", async (_req, res) => {
     try {
         const { rows } = await pool.query(`SELECT "id","nome","papel" FROM "Usuarios" ORDER BY "id" DESC`);
         res.json(rows);
@@ -205,7 +202,7 @@ usuariosRoutes.get("/:id", async (_req, res) => {
     if (!Number.isInteger(id) || id <= 0)
         return res.status(400).json({ erro: "id inválido!" });
     try {
-        const result = await pool.query(`SELECT "id","nome","papel" FROM "Usuarios" WHERE "id" = $1`, [id]);
+        const result = await pool.query(`SELECT "id","nome","papel","email" FROM "Usuarios" WHERE "id" = $1`, [id]);
         const { rows } = result;
         if (!rows[0]) return res.status(404).json({ erro: "Não Encontrado" });
         res.json(rows[0]);
@@ -253,9 +250,10 @@ usuariosRoutes.put("/:id", authMiddleware, async (req, res) => {
         const { rows } = await pool.query(query, params);
 
         if (!rows[0]) return res.status(404).json({ erro: "usuário não encontrado" });
-            return res.json(rows[0]);
+        return res.json(rows[0]);
     } catch (err) {
         if (err?.code === "23505") return res.status(409).json({ erro: "email já em uso" });
+        console.log(err);
         return res.status(500).json({ erro: "erro interno" });
     }
 });
@@ -270,20 +268,20 @@ usuariosRoutes.patch("/:id", authMiddleware, async (req, res) => {
         try {
             const consulta = await pool.query(`SELECT "papel" FROM "Usuarios" WHERE "id"=$1`, [uid]);
             const linha = consulta.rows[0];
-            if (linha) {
-                const query = await pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id","nome","papel"`, [String(0),uid]);
+            if (linha.papel) {
+                const query = await pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id","nome","papel"`, [0, uid]);
                 const row = query.rows[0];
                 return res.json(row);
             }
-            else{
-                const query = pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id",nome,"papel"`,[1,uid]);
+            else {
+                const query = pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id",nome,"papel"`, [1, uid]);
                 const row = query.rows[0];
                 return res.json(row);
             }
         }
         catch (erro) {
             console.log(erro);
-            return res.status(500).json({erro:"erro interno"});
+            return res.status(500).json({ erro: "erro interno" });
         }
     }
 });
