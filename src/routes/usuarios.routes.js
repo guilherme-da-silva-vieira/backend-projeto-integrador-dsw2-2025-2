@@ -270,12 +270,12 @@ usuariosRoutes.patch("/:id", authMiddleware, async (req, res) => {
             const linha = consulta.rows[0];
             if (linha.papel) {
                 const query = await pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id","nome","papel"`, [0, uid]);
-                const row = query.rows[0];
+                const row = query.rows;
                 return res.json(row);
             }
             else {
                 const query = pool.query(`UPDATE "Usuarios" SET "papel"=$1 WHERE "id"=$2 RETURNING "id",nome,"papel"`, [1, uid]);
-                const row = query.rows[0];
+                const row = query.rows;
                 return res.json(row);
             }
         }
