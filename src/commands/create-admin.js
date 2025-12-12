@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import readline from 'readline';
-import { Pool } from "pg";
+import { Client } from "pg";
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -12,7 +12,7 @@ function pergunta(query) {
     });
 }
 dotenv.config();
-const pool = new Pool({
+const client = new Client({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     database: process.env.DB_DATABASE,
@@ -35,7 +35,7 @@ async function createAdmin() {
             return;
         }
         const senha_hash = await bcrypt.hash(senha,12);
-        const consulta = await pool.query(`INSERT INTO "Usuarios"("nome","email","senha_hash","papel") VALUES($1,$2,$3,$4)
+        const consulta = await client.query(`INSERT INTO "Usuarios"("nome","email","senha_hash","papel") VALUES($1,$2,$3,$4)
             RETURNING "id","nome", "email", "senha_hash", "papel"`,
             [String(nome).trim(),String(email).trim().toLowerCase(),senha_hash,papel]);
         const user = consulta.rows[0];
@@ -51,6 +51,9 @@ async function createAdmin() {
     catch{
         console.log("Um erro ocorreu durante a execução!");
         return;
+    }
+    finally{
+        client.end();
     }
 }
 
