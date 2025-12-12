@@ -19,6 +19,7 @@ const client = new Client({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
   })
+client.connect();
 async function createAdmin() {
     try {
         const papel = 0;
@@ -39,21 +40,20 @@ async function createAdmin() {
             RETURNING "id","nome", "email", "senha_hash", "papel"`,
             [String(nome).trim(),String(email).trim().toLowerCase(),senha_hash,papel]);
         const user = consulta.rows[0];
+        await client.end();
         if(!user){
             console.log("Não foi possível criar usuário!");
             return;
         }
         else{
             console.log("Usuário administrador criado com sucesso!");
+            console.log(user);
             return;
         }
     }
     catch{
         console.log("Um erro ocorreu durante a execução!");
         return;
-    }
-    finally{
-        client.end();
     }
 }
 
